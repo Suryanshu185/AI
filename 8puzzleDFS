@@ -1,0 +1,94 @@
+class PuzzleNode:
+    def __init__(self, state, parent=None, action=None):
+        self.state = state
+        self.parent = parent
+        self.action = action
+
+    def __eq__(self, other):
+        return self.state == other.state
+
+    def __hash__(self):
+        return hash(str(self.state))
+
+
+class Puzzle:
+    def __init__(self, initial_state, goal_state):
+        self.initial_state = initial_state
+        self.goal_state = goal_state
+
+    def generate_next_states(self, state):
+        i, j = self.find_empty(state)
+        next_states = []
+        if i > 0:
+            next_state = [row[:] for row in state]
+            next_state[i][j], next_state[i - 1][j] = next_state[i - 1][j], next_state[i][j]
+            next_states.append(('UP', next_state))
+        if i < 2:
+            next_state = [row[:] for row in state]
+            next_state[i][j], next_state[i + 1][j] = next_state[i + 1][j], next_state[i][j]
+            next_states.append(('DOWN', next_state))
+        if j > 0:
+            next_state = [row[:] for row in state]
+            next_state[i][j], next_state[i][j - 1] = next_state[i][j - 1], next_state[i][j]
+            next_states.append(('LEFT', next_state))
+        if j < 2:
+            next_state = [row[:] for row in state]
+            next_state[i][j], next_state[i][j + 1] = next_state[i][j + 1], next_state[i][j]
+            next_states.append(('RIGHT', next_state))
+        return next_states
+
+    def find_empty(self, state):
+        for i in range(3):
+            for j in range(3):
+                if state[i][j] == 0:
+                    return i, j
+
+    def is_goal_state(self, state):
+        return state == self.goal_state
+
+
+class Search:
+    @staticmethod
+    def dfs(initial_state, goal_state):
+        puzzle = Puzzle(initial_state, goal_state)
+        visited = set()
+        stack = [PuzzleNode(initial_state)]
+
+        while stack:
+            node = stack.pop()
+            state = node.state
+            visited.add(tuple(map(tuple, state)))
+
+            if puzzle.is_goal_state(state):
+                return Search.get_path(node)
+
+            for action, next_state in puzzle.generate_next_states(state):
+                if tuple(map(tuple, next_state)) not in visited:
+                    child_node = PuzzleNode(next_state, node, action)
+                    stack.append(child_node)
+                    visited.add(tuple(map(tuple, next_state)))
+
+        return None
+
+    @staticmethod
+    def get_path(node):
+        path = []
+        while node:
+            path.append((node.action, node.state))
+            node = node.parent
+        return path[::-1]
+
+
+initial_state = [[2, 8, 1], [0, 4, 3], [7, 6, 5]]
+goal_state = [[1, 2, 3], [8, 0, 4], [7, 6, 5]]
+
+dfs_solution = Search.dfs(initial_state, goal_state)
+if dfs_solution:
+    print("DFS Solution steps:")
+    for i, (action, state) in enumerate(dfs_solution):
+        print(f"Step {i + 1}: Move {action}")
+        for row in state:
+            print(row)
+        print()
+else:
+    print("DFS: No solution")
